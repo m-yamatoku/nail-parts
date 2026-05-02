@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面 - ネイルパーツ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:#f5f5f5;}
+#login-screen{display:flex;align-items:center;justify-content:center;height:100vh;}
+#login-box{background:#fff;padding:40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:320px;}
+#login-box h1{font-size:18px;color:#2a2118;margin-bottom:24px;text-align:center;}
+#login-box input{width:100%;padding:10px 14px;font-size:14px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;font-family:inherit;outline:none;}
+#login-box button{width:100%;padding:11px;background:#D4537E;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;}
+#login-error{color:#b0434a;font-size:12px;margin-top:8px;text-align:center;display:none;}
+#app{display:none;}
+header{background:#fff;padding:14px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+header h1{font-size:16px;font-weight:700;color:#2a2118;}
+.nav-tabs{display:flex;gap:4px;padding:16px 20px 0;background:#f5f5f5;}
+.nav-tab{padding:9px 16px;font-size:13px;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:inherit;background:#e0dcd6;color:#6a6050;font-weight:500;}
+.nav-tab.active{background:#fff;color:#2a2118;font-weight:700;}
+.tab-content{display:none;background:#fff;margin:0 20px 20px;border-radius:0 8px 8px 8px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.tab-content.active{display:block;}
+.btn{padding:8px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;white-space:nowrap;}
+.btn-primary{background:#D4537E;color:#fff;}
+.btn-warning{background:#c47a00;color:#fff;}
+.btn-danger{background:#b0434a;color:#fff;}
+.btn-gray{background:#e0e0e0;color:#555;}
+.btn-success{background:#3b7a4a;color:#fff;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:#f5f5f5;padding:8px 10px;text-align:left;border-bottom:2px solid #e0e0e0;font-weight:600;color:#555;white-space:nowrap;}
+td{padding:8px 10px;border-bottom:1px solid #f0f0f0;color:#2a2118;vertical-align:middle;}
+tr:hover td{background:#fafafa;}
+.product-img{width:44px;height:44px;object-fit:cover;border-radius:6px;background:#f5f2ed;}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;}
+.badge-free{background:#eaf3ee;color:#3b7a4a;}
+.badge-paid{background:#fceaea;color:#b0434a;}
+.badge-new{background:#fff3e0;color:#c47a00;}
+.badge-hidden{background:#f0ede8;color:#9a9080;}
+.form-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.form-group{flex:1;min-width:160px;}
+.form-group label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:600;}
+.form-group input,.form-group select{width:100%;padding:8px 10px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:inherit;outline:none;}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.search-bar input{flex:1;min-width:140px;padding:8px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:inherit;outline:none;}
+.search-bar select{padding:8px 10px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:inherit;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:#f9f9f9;border-radius:12px;padding:14px;text-align:center;}
+.stat-num{font-size:26px;font-weight:700;color:#D4537E;}
+.stat-label{font-size:11px;color:#888;margin-top:4px;}
+.rank-list{list-style:none;}
+.rank-list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+.rank-num{width:24px;height:24px;background:#D4537E;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.rank-count{margin-left:auto;color:#888;font-size:12px;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal-box{background:#fff;border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;}
+.modal-box h2{font-size:16px;font-weight:700;margin-bottom:16px;color:#2a2118;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2a2118;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.img-upload-area{border:2px dashed #ddd;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;position:relative;min-height:80px;}
+.img-upload-area:hover,.img-upload-area.drag-over{border-color:#D4537E;background:#fdf5f8;}
+.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.img-preview{width:80px;height:80px;object-fit:cover;border-radius:8px;margin:0 auto 8px;display:block;background:#f5f2ed;}
+.img-upload-text{font-size:12px;color:#aaa;}
+.img-url-row{display:flex;gap:6px;align-items:center;margin-top:8px;}
+.img-url-row input{flex:1;padding:6px 10px;font-size:12px;border:1px solid #ddd;border-radius:6px;font-family:inherit;outline:none;}
+.img-url-row span{font-size:11px;color:#aaa;white-space:nowrap;}
+.uploading{color:#D4537E;font-size:12px;margin-top:4px;}
+.checkbox-row{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;}
+</style>
+</head>
+<body>
+<div id="login-screen">
+  <div id="login-box">
+    <h1>🔐 管理画面ログイン</h1>
+    <input type="password" id="pw-input" placeholder="パスワード" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">ログイン</button>
+    <div id="login-error">パスワードが違います</div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>🌸 ネイルパーツ 管理画面</h1>
+    <span id="part-count" style="font-size:12px;color:#888;"></span>
+  </header>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('parts',this)">パーツ管理</button>
+    <button class="nav-tab" onclick="showTab('add',this)">新規追加</button>
+    <button class="nav-tab" onclick="showTab('stats',this)">検索ランキング</button>
+  </div>
+
+  <!-- パーツ管理 -->
+  <div id="tab-parts" class="tab-content active">
+    <div class="search-bar">
+      <input id="admin-search" placeholder="商品名・型番で検索..." oninput="renderAdminList()">
+      <select id="admin-filter" onchange="renderAdminList()">
+        <option value="">全て（廃盤以外）</option>
+        <option value="free">無料</option>
+        <option value="paid">有料</option>
+        <option value="new">最新入荷</option>
+        <option value="hidden">掲載しない</option>
+        <option value="discontinued">廃盤</option>
+      </select>
+    </div>
+    <div id="admin-count" style="font-size:11px;color:#aaa;margin-bottom:10px;"></div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>画像</th><th>型番</th><th>商品名</th><th>カテゴリ</th><th>状態</th><th>入荷日</th><th>操作</th></tr></thead>
+      <tbody id="admin-table"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- 新規追加 -->
+  <div id="tab-add" class="tab-content">
+    <h2 style="font-size:15px;font-weight:700;margin-bottom:16px;">新しいパーツを追加</h2>
+    <div class="form-row">
+      <div class="form-group"><label>型番 *</label><input id="add-code" placeholder="例：916520"></div>
+      <div class="form-group"><label>商品名 *</label><input id="add-name" placeholder="例：ハートパーツ ピンク"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>大カテゴリ</label><input id="add-category" placeholder="例：パーツ"></div>
+      <div class="form-group"><label>小カテゴリ</label><input id="add-subcategory" placeholder="例：ハート"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>説明</label><input id="add-description" placeholder="入り数：100個など"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>画像</label>
+      <div class="img-upload-area" id="add-upload-area"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event,'add')">
+        <input type="file" accept="image/*" onchange="handleFileSelect(event,'add')">
+        <img id="add-img-preview" class="img-preview" src="" style="display:none;">
+        <div class="img-upload-text" id="add-upload-text">📷 クリックまたはドラッグ＆ドロップ</div>
+        <div class="uploading" id="add-uploading" style="display:none;">アップロード中...</div>
+      </div>
+      <div class="img-url-row">
+        <span>またはURL：</span>
+        <input id="add-imageurl" placeholder="https://..." oninput="updatePreview('add')">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>種別</label>
+        <select id="add-type"><option value="free">無料</option><option value="paid">有料</option></select>
+      </div>
+      <div class="form-group"><label>入荷日</label><input type="date" id="add-arrival"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="checkbox-row"><input type="checkbox" id="add-isnew"> 最新入荷タブに表示</label></div>
+    </div>
+    <button class="btn btn-primary" onclick="addPart()">追加する</button>
+  </div>
+
+  <!-- 検索ランキング -->
+  <div id="tab-stats" class="tab-content">
+    <div class="stats-grid" id="stats-grid"></div>
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🔍 検索キーワード Top10</h3>
+    <ul class="rank-list" id="rank-list"><li style="color:#aaa;font-size:13px;">読み込み中...</li></ul>
+  </div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-bg" id="edit-modal" onclick="closeEditModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h2>✏️ パーツを編集</h2>
+    <input type="hidden" id="edit-id">
+    <div class="form-row">
+      <div class="form-group"><label>型番</label><input id="edit-code"></div>
+      <div class="form-group"><label>商品名</label><input id="edit-name"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>大カテゴリ</label><input id="edit-category"></div>
+      <div class="form-group"><label>小カテゴリ</label><input id="edit-subcategory"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;"><label>説明</label><input id="edit-description"></div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>画像</label>
+      <div class="img-upload-area" id="edit-upload-area"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event,'edit')">
+        <input type="file" accept="image/*" onchange="handleFileSelect(event,'edit')">
+        <img id="edit-img-preview" class="img-preview" src="" style="display:none;">
+        <div class="img-upload-text" id="edit-upload-text">📷 クリックまたはドラッグ＆ドロップで変更</div>
+        <div class="uploading" id="edit-uploading" style="display:none;">アップロード中...</div>
+      </div>
+      <div class="img-url-row">
+        <span>またはURL：</span>
+        <input id="edit-imageurl" oninput="updatePreview('edit')">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>種別</label>
+        <select id="edit-type"><option value="free">無料</option><option value="paid">有料</option></select>
+      </div>
+      <div class="form-group"><label>入荷日</label><input type="date" id="edit-arrival"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="checkbox-row"><input type="checkbox" id="edit-isnew"> 最新入荷タブに表示</label></div>
+      <div class="form-group"><label class="checkbox-row"><input type="checkbox" id="edit-ishidden"> 掲載しない（一時非表示）</label></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeEditModal()">キャンセル</button>
+      <button class="btn btn-warning" onclick="makeDiscontinued()">廃盤にする</button>
+      <button class="btn btn-success" onclick="restorePart()" id="restore-btn" style="display:none;">料金表に復活</button>
+      <button class="btn btn-primary" onclick="saveEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://rhpjjntxgbemqrdbdmyy.supabase.co';
+const SB_KEY='sb_publishable_eQMbb2aoA-57MDOhAktEtQ_l-KiT3rf';
+const ADMIN_PW='nice3355';
+const BUCKET='parts-images';
+let ALL_PARTS=[];
+
+function login(){
+  if(document.getElementById('pw-input').value===ADMIN_PW){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadParts();
+  }else{
+    document.getElementById('login-error').style.display='block';
+  }
+}
+
+async function api(path,method='GET',body=null){
+  const h={'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+  const opts={method,headers:h};
+  if(body) opts.body=JSON.stringify(body);
+  return fetch(SB_URL+path,opts);
+}
+
+async function uploadImage(file,prefix){
+  const ext=file.name.split('.').pop();
+  const path=`${prefix}_${Date.now()}.${ext}`;
+  const res=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type},
+    body:file
+  });
+  return res.ok?`${SB_URL}/storage/v1/object/public/${BUCKET}/${path}`:null;
+}
+
+function handleDrop(e,prefix){
+  e.preventDefault();
+  document.getElementById(prefix+'-upload-area').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file) processImageFile(file,prefix);
+}
+function handleFileSelect(e,prefix){
+  const file=e.target.files[0];
+  if(file) processImageFile(file,prefix);
+}
+async function processImageFile(file,prefix){
+  const reader=new FileReader();
+  reader.onload=ev=>{const img=document.getElementById(prefix+'-img-preview');img.src=ev.target.result;img.style.display='block';};
+  reader.readAsDataURL(file);
+  document.getElementById(prefix+'-uploading').style.display='block';
+  document.getElementById(prefix+'-upload-text').style.display='none';
+  const url=await uploadImage(file,prefix);
+  document.getElementById(prefix+'-uploading').style.display='none';
+  document.getElementById(prefix+'-upload-text').style.display='block';
+  if(url){document.getElementById(prefix+'-imageurl').value=url;showToast('画像をアップロードしました！');}
+  else showToast('アップロード失敗。URLを直接入力してください。');
+}
+function updatePreview(prefix){
+  const url=document.getElementById(prefix+'-imageurl').value;
+  const img=document.getElementById(prefix+'-img-preview');
+  if(url){img.src=url;img.style.display='block';}else{img.style.display='none';}
+}
+
+async function loadParts(){
+  const res=await api('/rest/v1/parts?select=*&order=created_at.asc&limit=1000');
+  ALL_PARTS=await res.json();
+  const active=ALL_PARTS.filter(p=>!p.is_discontinued);
+  document.getElementById('part-count').textContent=`全${active.length}件（廃盤除く）`;
+  renderAdminList();
+}
+
+function renderAdminList(){
+  const q=document.getElementById('admin-search').value.toLowerCase();
+  const f=document.getElementById('admin-filter').value;
+  let list=ALL_PARTS.filter(p=>{
+    const mq=!q||p.name.toLowerCase().includes(q)||(p.code||'').toLowerCase().includes(q);
+    let mf=true;
+    if(f==='free') mf=!p.is_paid&&!p.is_new&&!p.is_discontinued&&!p.is_hidden;
+    else if(f==='paid') mf=p.is_paid&&!p.is_new&&!p.is_discontinued;
+    else if(f==='new') mf=p.is_new&&!p.is_discontinued;
+    else if(f==='hidden') mf=p.is_hidden&&!p.is_discontinued;
+    else if(f==='discontinued') mf=p.is_discontinued;
+    else mf=!p.is_discontinued;
+    return mq&&mf;
+  });
+  document.getElementById('admin-count').textContent=`${list.length}件`;
+  document.getElementById('admin-table').innerHTML=list.map(p=>{
+    let badgeClass='badge-free', badgeText='無料';
+    if(p.is_discontinued){badgeClass='badge-hidden';badgeText='廃盤';}
+    else if(p.is_hidden){badgeClass='badge-hidden';badgeText='非表示';}
+    else if(p.is_new){badgeClass='badge-new';badgeText='NEW';}
+    else if(p.is_paid){badgeClass='badge-paid';badgeText='有料';}
+    return `<tr>
+      <td><img class="product-img" src="${p.image_url||''}" onerror="this.style.display='none'"></td>
+      <td style="color:#888;">${p.code||''}</td>
+      <td style="font-weight:500;min-width:120px;">${p.name}</td>
+      <td style="color:#888;font-size:11px;">${p.category||''}</td>
+      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+      <td style="color:#888;font-size:11px;">${p.arrival_date||'-'}</td>
+      <td><button class="btn btn-gray" style="font-size:11px;padding:4px 8px;" onclick='openEdit(${JSON.stringify(p).replace(/'/g,"&#39;")})'>編集</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openEdit(p){
+  document.getElementById('edit-id').value=p.id;
+  document.getElementById('edit-code').value=p.code||'';
+  document.getElementById('edit-name').value=p.name||'';
+  document.getElementById('edit-category').value=p.category||'';
+  document.getElementById('edit-subcategory').value=p.sub_category||'';
+  document.getElementById('edit-imageurl').value=p.image_url||'';
+  document.getElementById('edit-description').value=p.description||'';
+  document.getElementById('edit-type').value=p.is_paid?'paid':'free';
+  document.getElementById('edit-arrival').value=p.arrival_date||'';
+  document.getElementById('edit-isnew').checked=p.is_new||false;
+  document.getElementById('edit-ishidden').checked=p.is_hidden||false;
+  const img=document.getElementById('edit-img-preview');
+  if(p.image_url){img.src=p.image_url;img.style.display='block';}else{img.style.display='none';}
+  // 廃盤なら復活ボタン表示
+  document.getElementById('restore-btn').style.display=p.is_discontinued?'block':'none';
+  document.getElementById('edit-modal').className='modal-bg open';
+}
+function closeEditModal(){document.getElementById('edit-modal').className='modal-bg';}
+
+async function saveEdit(){
+  const id=document.getElementById('edit-id').value;
+  const body={
+    code:document.getElementById('edit-code').value,
+    name:document.getElementById('edit-name').value,
+    category:document.getElementById('edit-category').value,
+    sub_category:document.getElementById('edit-subcategory').value,
+    image_url:document.getElementById('edit-imageurl').value,
+    description:document.getElementById('edit-description').value,
+    is_paid:document.getElementById('edit-type').value==='paid',
+    arrival_date:document.getElementById('edit-arrival').value||null,
+    is_new:document.getElementById('edit-isnew').checked,
+    is_hidden:document.getElementById('edit-ishidden').checked,
+  };
+  await api(`/rest/v1/parts?id=eq.${id}`,'PATCH',body);
+  closeEditModal();showToast('保存しました！');loadParts();
+}
+
+async function makeDiscontinued(){
+  if(!confirm('このパーツを廃盤にしますか？\n料金表から非表示になり廃盤一覧に移動します。')) return;
+  const id=document.getElementById('edit-id').value;
+  await api(`/rest/v1/parts?id=eq.${id}`,'PATCH',{is_discontinued:true,is_hidden:false,is_new:false});
+  closeEditModal();showToast('廃盤にしました');loadParts();
+}
+
+async function restorePart(){
+  if(!confirm('このパーツを料金表に復活させますか？')) return;
+  const id=document.getElementById('edit-id').value;
+  await api(`/rest/v1/parts?id=eq.${id}`,'PATCH',{is_discontinued:false});
+  closeEditModal();showToast('復活しました！');loadParts();
+}
+
+async function addPart(){
+  const code=document.getElementById('add-code').value.trim();
+  const name=document.getElementById('add-name').value.trim();
+  if(!code||!name){alert('型番と商品名は必須です');return;}
+  const body={
+    id:'custom_'+Date.now(),code,name,
+    category:document.getElementById('add-category').value,
+    sub_category:document.getElementById('add-subcategory').value,
+    image_url:document.getElementById('add-imageurl').value,
+    description:document.getElementById('add-description').value,
+    is_paid:document.getElementById('add-type').value==='paid',
+    arrival_date:document.getElementById('add-arrival').value||null,
+    is_new:document.getElementById('add-isnew').checked,
+  };
+  await api('/rest/v1/parts','POST',body);
+  showToast('追加しました！');
+  ['add-code','add-name','add-category','add-subcategory','add-imageurl','add-description','add-arrival'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-isnew').checked=false;
+  document.getElementById('add-img-preview').style.display='none';
+  loadParts();
+}
+
+async function loadStats(){
+  const active=ALL_PARTS.filter(p=>!p.is_discontinued);
+  const free=active.filter(p=>!p.is_paid&&!p.is_new&&!p.is_hidden).length;
+  const paid=active.filter(p=>p.is_paid&&!p.is_new).length;
+  const newp=active.filter(p=>p.is_new).length;
+  const hidden=active.filter(p=>p.is_hidden).length;
+  const disc=ALL_PARTS.filter(p=>p.is_discontinued).length;
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${active.length}</div><div class="stat-label">掲載中</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#3b7a4a">${free}</div><div class="stat-label">無料</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#b0434a">${paid}</div><div class="stat-label">有料</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#c47a00">${newp}</div><div class="stat-label">最新入荷</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#9a9080">${hidden}</div><div class="stat-label">非表示</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#9a9080">${disc}</div><div class="stat-label">廃盤</div></div>`;
+  const rankRes=await fetch(`${SB_URL}/rest/v1/rpc/get_search_ranking`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'}});
+  if(rankRes.ok){
+    const ranks=await rankRes.json();
+    document.getElementById('rank-list').innerHTML=ranks.length===0
+      ?'<li style="color:#aaa;font-size:13px;">まだ検索データがありません</li>'
+      :ranks.map((r,i)=>`<li><div class="rank-num">${i+1}</div><span>${r.keyword}</span><span class="rank-count">${r.count}回</span></li>`).join('');
+  }else{
+    document.getElementById('rank-list').innerHTML='<li style="color:#aaa;font-size:13px;">まだ検索データがありません</li>';
+  }
+}
+
+function showTab(name,el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='stats') loadStats();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+</script>
+</body>
+</html>

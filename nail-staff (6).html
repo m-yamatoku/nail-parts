@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ネイルパーツ一覧</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:#faf9f7;height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+#header{padding:14px 18px 0;background:#fff;border-bottom:1px solid #ece9e3;flex-shrink:0;}
+#header h1{font-size:17px;font-weight:700;color:#2a2118;margin-bottom:2px;}
+#header p{font-size:11px;color:#b0a890;margin-bottom:10px;}
+.tabs{display:flex;}
+.tab{flex:1;padding:9px 8px;font-size:12px;background:none;border:none;border-bottom:2.5px solid transparent;color:#a09880;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;}
+.tab.active-free{color:#3b7a4a;border-bottom-color:#3b7a4a;font-weight:700;}
+.tab.active-paid{color:#b0434a;border-bottom-color:#b0434a;font-weight:700;}
+.tab.active-new{color:#c47a00;border-bottom-color:#c47a00;font-weight:700;}
+.badge{border-radius:10px;font-size:10px;padding:1px 6px;background:#e8e4dc;color:#a09880;}
+.tab.active-free .badge{background:#3b7a4a;color:#fff;}
+.tab.active-paid .badge{background:#b0434a;color:#fff;}
+.tab.active-new .badge{background:#c47a00;color:#fff;}
+#controls{padding:10px 14px;background:#fff;display:flex;gap:8px;border-bottom:1px solid #ece9e3;flex-shrink:0;}
+#search{flex:1;padding:7px 11px;font-size:12px;border:1px solid #ddd8cf;border-radius:8px;background:#faf9f7;color:#2a2118;outline:none;font-family:inherit;}
+#cat-filter{padding:7px 8px;font-size:12px;border:1px solid #ddd8cf;border-radius:8px;background:#faf9f7;color:#2a2118;cursor:pointer;font-family:inherit;}
+#count{padding:5px 14px;font-size:11px;color:#c0b8a8;flex-shrink:0;}
+#grid-wrap{flex:1;overflow-y:auto;padding:0 12px 16px;}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px;padding-top:8px;}
+.card{background:#fff;border-radius:12px;border:1px solid #ece9e3;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s;}
+.card:hover{transform:scale(1.03);border-color:#c0b8a8;}
+.card-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#f5f2ed;}
+.card-body{padding:7px 9px 9px;}
+.type-badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;margin-bottom:3px;font-weight:600;}
+.free-badge{background:#eaf3ee;color:#3b7a4a;}
+.paid-badge{background:#fceaea;color:#b0434a;}
+.new-badge{background:#fff3e0;color:#c47a00;}
+.card-name{font-size:11px;line-height:1.4;color:#2a2118;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-code{font-size:10px;color:#b0a890;}
+.empty{text-align:center;padding:3rem;color:#c0b8a8;font-size:13px;grid-column:1/-1;}
+#modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:100;padding:20px;}
+#modal-bg.open{display:flex;}
+#modal{background:#fff;border-radius:16px;overflow:hidden;max-width:380px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.2);}
+#modal-img-wrap{position:relative;}
+#modal-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#f5f2ed;}
+#modal-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,0.4);color:#fff;font-size:18px;cursor:pointer;}
+#modal-body{padding:16px 20px 22px;}
+#modal-type{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;margin-bottom:8px;font-weight:600;}
+#modal-name{font-size:17px;font-weight:700;color:#2a2118;margin-bottom:4px;line-height:1.4;}
+#modal-meta{font-size:12px;color:#a09880;}
+#modal-desc{font-size:13px;color:#6a6050;border-top:1px solid #ece9e3;padding-top:10px;margin-top:8px;}
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>ネイルパーツ一覧</h1>
+  <p id="total-count">読み込み中...</p>
+  <div class="tabs">
+    <button class="tab active-free" onclick="switchTab('free')">無料<span class="badge" id="free-badge">-</span></button>
+    <button class="tab" onclick="switchTab('paid')">有料<span class="badge" id="paid-badge">-</span></button>
+    <button class="tab" onclick="switchTab('new')">🆕 最新入荷<span class="badge" id="new-badge">-</span></button>
+  </div>
+</div>
+<div id="controls">
+  <input id="search" type="text" placeholder="商品名・型番で検索..." oninput="onSearch()">
+  <select id="cat-filter" onchange="render()"><option value="">全カテゴリ</option></select>
+</div>
+<div id="count"></div>
+<div id="grid-wrap"><div id="grid"><div class="empty">読み込み中...</div></div></div>
+<div id="modal-bg" onclick="closeModal()">
+  <div id="modal" onclick="event.stopPropagation()">
+    <div id="modal-img-wrap">
+      <img id="modal-img" src="" alt="">
+      <button id="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="modal-body">
+      <div id="modal-type"></div>
+      <div id="modal-name"></div>
+      <div id="modal-meta"></div>
+      <div id="modal-desc"></div>
+    </div>
+  </div>
+</div>
+<script>
+const SB_URL = 'https://rhpjjntxgbemqrdbdmyy.supabase.co';
+const SB_KEY = 'sb_publishable_eQMbb2aoA-57MDOhAktEtQ_l-KiT3rf';
+let ALL=[], FREE=[], PAID=[], NEW_PARTS=[];
+let currentTab='free', searchTimer=null;
+
+async function fetchParts() {
+  const res = await fetch(`${SB_URL}/rest/v1/parts?select=*&is_discontinued=eq.false&is_hidden=eq.false&order=created_at.asc&limit=1000`, {
+    headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}
+  });
+  ALL = await res.json();
+  FREE = ALL.filter(p=>!p.is_paid&&!p.is_new);
+  PAID = ALL.filter(p=>p.is_paid&&!p.is_new);
+  NEW_PARTS = ALL.filter(p=>p.is_new);
+  document.getElementById('total-count').textContent = '全'+ALL.length+'商品';
+  document.getElementById('free-badge').textContent = FREE.length;
+  document.getElementById('paid-badge').textContent = PAID.length;
+  document.getElementById('new-badge').textContent = NEW_PARTS.length;
+  updateCategories(); render();
+}
+
+function switchTab(tab) {
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.className='tab');
+  if(tab==='free') document.querySelectorAll('.tab')[0].className='tab active-free';
+  else if(tab==='paid') document.querySelectorAll('.tab')[1].className='tab active-paid';
+  else document.querySelectorAll('.tab')[2].className='tab active-new';
+  document.getElementById('search').value='';
+  document.getElementById('cat-filter').value='';
+  updateCategories(); render();
+}
+
+function updateCategories() {
+  const list=currentTab==='free'?FREE:currentTab==='paid'?PAID:NEW_PARTS;
+  const cats=[...new Set(list.map(p=>p.category))].sort();
+  const sel=document.getElementById('cat-filter');
+  sel.innerHTML='<option value="">全カテゴリ</option>';
+  cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+}
+
+function onSearch() {
+  const q=document.getElementById('search').value.trim();
+  if(searchTimer) clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>{
+    if(q.length>=2) fetch(`${SB_URL}/rest/v1/search_logs`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({keyword:q})});
+    render();
+  },500);
+}
+
+function render() {
+  const q=document.getElementById('search').value.toLowerCase();
+  const cat=document.getElementById('cat-filter').value;
+  const list=currentTab==='free'?FREE:currentTab==='paid'?PAID:NEW_PARTS;
+  const filtered=list.filter(p=>{
+    const mq=!q||p.name.toLowerCase().includes(q)||(p.code||'').toLowerCase().includes(q);
+    const mc=!cat||p.category===cat;
+    return mq&&mc;
+  });
+  document.getElementById('count').textContent=filtered.length+'件';
+  const grid=document.getElementById('grid');
+  if(filtered.length===0){grid.innerHTML='<div class="empty">該当する商品がありません</div>';return;}
+  grid.innerHTML=filtered.map(p=>`
+    <div class="card" onclick='openModal(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+      <img class="card-img" src="${p.image_url||''}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">
+      <div class="card-body">
+        <div class="type-badge ${p.is_new?'new-badge':p.is_paid?'paid-badge':'free-badge'}">${p.is_new?'NEW':p.is_paid?'有料':'無料'}</div>
+        <div class="card-name">${p.name}</div>
+        <div class="card-code">${p.code||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openModal(p) {
+  document.getElementById('modal-img').src=p.image_url||'';
+  document.getElementById('modal-img').style.display=p.image_url?'block':'none';
+  const t=document.getElementById('modal-type');
+  t.textContent=p.is_new?'NEW':p.is_paid?'有料':'無料';
+  t.style.cssText='display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;margin-bottom:8px;font-weight:600;';
+  t.style.background=p.is_new?'#fff3e0':p.is_paid?'#fceaea':'#eaf3ee';
+  t.style.color=p.is_new?'#c47a00':p.is_paid?'#b0434a':'#3b7a4a';
+  document.getElementById('modal-name').textContent=p.name;
+  document.getElementById('modal-meta').textContent='型番：'+(p.code||'')+'　·　'+(p.sub_category||p.category||'');
+  const d=document.getElementById('modal-desc');
+  if(p.description){d.textContent=p.description;d.style.display='block';}else{d.style.display='none';}
+  document.getElementById('modal-bg').className='open';
+}
+function closeModal(){document.getElementById('modal-bg').className='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+fetchParts();
+</script>
+</body>
+</html>
